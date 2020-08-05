@@ -929,6 +929,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "log",
+ "postgres",
  "r2d2",
  "r2d2_postgres",
  "serde 1.0.114",
