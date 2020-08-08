@@ -6,7 +6,7 @@ use r2d2_postgres::PostgresConnectionManager;
 use validator::Validate;
 
 use crate::auth::*;
-use crate::model::FormLogin;
+use crate::model::*;
 
 pub async fn signup(
     form: web::Json<FormLogin>,
@@ -43,21 +43,29 @@ pub async fn login(
         conn.query_opt("SELECT password FROM accounts WHERE email = $1", &[&email])
     })
     .await
-    .map(|row| {
-        match row {
-            Some(row) => {
-                let target: String = row.get("password");
-                let hash = get_hash(password.as_str());
-                if target == hash {
-                    HttpResponse::Ok().body(format!("{}", "token"))
-                } else {
-                    HttpResponse::Ok().body(format!("{}", "error"))
-                }
-                }
-            None =>  HttpResponse::Ok().body(format!("{}", "This email doesn't exist."))
+    .map(|row| match row {
+        Some(row) => {
+            let target: String = row.get("password");
+            let hash = get_hash(password.as_str());
+            let valid = target == hash;
+            let token = "token".to_owned();
+            let error = if valid {
+                "".to_owned()
+            } else {
+                format!("{}", "Password is invalid")
+            };
+            ResultToken {
+                success: valid,
+                token: token,
+                error: error,
+            }
         }
-    
+        None => ResultToken {
+            success: false,
+            token: "".to_owned(),
+            error: format!("{}", "This email doesn't exist."),
+        },
     })
     .map_err(|_| HttpResponse::InternalServerError())?;
-    Ok(res)
+    Ok(HttpResponse::Ok().json(res))
 }

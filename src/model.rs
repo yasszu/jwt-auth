@@ -9,6 +9,8 @@ pub struct FormLogin {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Token {
-    pub token: String
+pub struct ResultToken {
+    pub success: bool,
+    pub token: String,
+    pub error: String,
 }

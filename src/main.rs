@@ -11,7 +11,7 @@ mod auth;
 mod model;
 
 async fn index() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("Hello world!"))
+    Ok(HttpResponse::Ok().body("OK"))
 }
 
 #[actix_rt::main]
