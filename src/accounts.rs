@@ -40,17 +40,23 @@ pub async fn login(
     let password = data.password;
     let res = web::block(move || {
         let mut conn = db.get().unwrap();
-        conn.query_one("SELECT password FROM accounts WHERE email = $1", &[&email])
+        conn.query_opt("SELECT password FROM accounts WHERE email = $1", &[&email])
     })
     .await
     .map(|row| {
-        let target: String = row.get("password");
-        let hash = get_hash(password.as_str());
-        if target == hash {
-            HttpResponse::Ok().body(format!("{}", "token"))
-        } else {
-            HttpResponse::Ok().body(format!("{}", "error"))
+        match row {
+            Some(row) => {
+                let target: String = row.get("password");
+                let hash = get_hash(password.as_str());
+                if target == hash {
+                    HttpResponse::Ok().body(format!("{}", "token"))
+                } else {
+                    HttpResponse::Ok().body(format!("{}", "error"))
+                }
+                }
+            None =>  HttpResponse::Ok().body(format!("{}", "This email doesn't exist."))
         }
+    
     })
     .map_err(|_| HttpResponse::InternalServerError())?;
     Ok(res)
