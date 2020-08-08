@@ -9,6 +9,7 @@ use r2d2_postgres::PostgresConnectionManager;
 mod accounts;
 mod auth;
 mod model;
+mod jwt;
 
 async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
