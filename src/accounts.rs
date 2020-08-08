@@ -23,14 +23,34 @@ pub async fn signup(
         conn.execute(
             "INSERT INTO accounts (email, password) VALUES ($1, $2)",
             &[&data.email, &hash],
-        ).unwrap();
+        )
+    })
+    .await
+    .map(|_| HttpResponse::Ok().body("token"))
+    .map_err(|_| HttpResponse::InternalServerError())?;
+    Ok(res)
+}
 
-        conn.query_one("SELECT password FROM accounts WHERE email = $1", &[&data.email])
+pub async fn login(
+    form: web::Json<FormLogin>,
+    db: web::Data<Pool<PostgresConnectionManager<NoTls>>>,
+) -> Result<HttpResponse, Error> {
+    let data = form.into_inner();
+    let email = data.email;
+    let password = data.password;
+    let res = web::block(move || {
+        let mut conn = db.get().unwrap();
+        conn.query_one("SELECT password FROM accounts WHERE email = $1", &[&email])
     })
     .await
     .map(|row| {
-        let password: String = row.get("password");
-        HttpResponse::Ok().body(password)
+        let target: String = row.get("password");
+        let hash = get_hash(password.as_str());
+        if target == hash {
+            HttpResponse::Ok().body(format!("{}", "token"))
+        } else {
+            HttpResponse::Ok().body(format!("{}", "error"))
+        }
     })
     .map_err(|_| HttpResponse::InternalServerError())?;
     Ok(res)

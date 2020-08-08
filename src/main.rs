@@ -34,6 +34,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .route("/", web::get().to(index))
             .route("/signup", web::post().to(accounts::signup))
+            .route("/login", web::post().to(accounts::login))
     })
     .bind("127.0.0.1:8088")?
     .run()
