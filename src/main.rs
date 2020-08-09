@@ -6,7 +6,7 @@ use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
 
-mod accounts;
+mod handler;
 mod hash;
 mod model;
 mod jwt;
@@ -34,8 +34,8 @@ async fn main() -> std::io::Result<()> {
             .data(pool.clone())
             .wrap(middleware::Logger::default())
             .route("/", web::get().to(index))
-            .route("/signup", web::post().to(accounts::signup))
-            .route("/login", web::post().to(accounts::login))
+            .route("/signup", web::post().to(handler::signup))
+            .route("/login", web::post().to(handler::login))
     })
     .bind("127.0.0.1:8088")?
     .run()
