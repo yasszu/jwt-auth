@@ -1,3 +1,6 @@
+extern crate dotenv;
+
+use std::env;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
@@ -11,7 +14,18 @@ pub struct Claims {
     pub email: String,
 }
 
-pub fn get_claims(id: i32, email: String) -> Claims {
+pub fn jwt_sign(id: i32, email: String) -> String {
+    let secret = env::var("SECRET").unwrap();
+    let claims = get_claims(id, email);
+    encode_token(claims, &secret)
+}
+
+pub fn jwt_verify(token: &str) -> Option<Claims> {
+    let secret = env::var("SECRET").unwrap();
+    decode_token(token.to_owned(), &secret)
+}
+
+fn get_claims(id: i32, email: String) -> Claims {
     let current_time = Utc::now().timestamp();
     let expire_time = (Utc::now() + Duration::days(365)).timestamp();
     Claims {
@@ -22,7 +36,7 @@ pub fn get_claims(id: i32, email: String) -> Claims {
     }
 }
 
-pub fn encode_token(claims: Claims, secret: &str) -> String {
+fn encode_token(claims: Claims, secret: &str) -> String {
     encode(
         &Header::default(),
         &claims,
@@ -31,7 +45,7 @@ pub fn encode_token(claims: Claims, secret: &str) -> String {
     .unwrap()
 }
 
-pub fn decode_token(token: String, secret: &str) -> Option<Claims> {
+fn decode_token(token: String, secret: &str) -> Option<Claims> {
     let key = &DecodingKey::from_secret(secret.as_ref());
     let validation = &Validation::default();
     let result = match decode::<Claims>(&token, &key, &validation) {

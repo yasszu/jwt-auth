@@ -12,6 +12,7 @@ mod handler;
 mod hash;
 mod model;
 mod jwt;
+mod accounts;
 
 async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
