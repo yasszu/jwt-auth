@@ -5,13 +5,13 @@ use chrono::Duration;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub exp: usize,
-    pub iat: usize,
-    pub sub: i64,
+    pub exp: usize, // Required (validate_exp defaults to true in validation). Expiration time (as UTC timestamp)
+    pub iat: usize, // Optional. Issued at (as UTC timestamp)
+    pub sub: i32,   // Optional. Subject (whom token refers to)
     pub email: String,
 }
 
-pub fn get_claims(id: i64, email: String) -> Claims {
+pub fn get_claims(id: i32, email: String) -> Claims {
     let current_time = Utc::now().timestamp();
     let expire_time = (Utc::now() + Duration::days(365)).timestamp();
     Claims {
@@ -84,4 +84,5 @@ mod tests {
         let result = decode_token(token, &secret);
         assert_eq!(result.is_none(), true);
     }
+
 }
