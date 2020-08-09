@@ -6,6 +6,7 @@ use r2d2_postgres::PostgresConnectionManager;
 use validator::Validate;
 
 use crate::hash::*;
+use crate::jwt;
 use crate::model::*;
 
 pub async fn signup(
@@ -23,12 +24,38 @@ pub async fn signup(
         conn.execute(
             "INSERT INTO accounts (email, password) VALUES ($1, $2)",
             &[&data.email, &hash],
+        )?;
+        conn.query_opt(
+            "SELECT id, email FROM accounts WHERE email = $1",
+            &[&data.email],
         )
     })
     .await
-    .map(|_| HttpResponse::Ok().body("token"))
+    .map(|row| match row {
+        Some(row) => {
+            let id: i32 = row.get("id");
+            let email: String = row.get("email");
+            let token = jwt_sign(id, email);
+            ResultToken {
+                success: true,
+                token: token,
+                error: "".to_owned(),
+            }
+        }
+        None => ResultToken {
+            success: false,
+            token: "".to_owned(),
+            error: format!("{}", "Faild to sighup."),
+        },
+    })
     .map_err(|_| HttpResponse::InternalServerError())?;
-    Ok(res)
+    Ok(HttpResponse::Ok().json(res))
+}
+
+fn jwt_sign(id: i32, email: String) -> String {
+    let secret = "e4d25204-ea68-4307-ae30-1ee4fb39bc9";
+    let claims = jwt::get_claims(id, email);
+    jwt::encode_token(claims, &secret)
 }
 
 pub async fn login(
@@ -40,15 +67,20 @@ pub async fn login(
     let password = data.password;
     let res = web::block(move || {
         let mut conn = db.get().unwrap();
-        conn.query_opt("SELECT password FROM accounts WHERE email = $1", &[&email])
+        conn.query_opt(
+            "SELECT id, email, password FROM accounts WHERE email = $1",
+            &[&email],
+        )
     })
     .await
     .map(|row| match row {
         Some(row) => {
-            let target: String = row.get("password");
+            let _id: i32 = row.get("id");
+            let _email: String = row.get("email");
+            let _password: String = row.get("password");
             let hash = get_hash(password.as_str());
-            let success = target == hash;
-            let token = "token".to_owned();
+            let success = _password == hash;
+            let token = jwt_sign(_id, _email);
             let error = if success {
                 "".to_owned()
             } else {
