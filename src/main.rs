@@ -7,7 +7,7 @@ use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
 
 mod accounts;
-mod auth;
+mod hash;
 mod model;
 mod jwt;
 

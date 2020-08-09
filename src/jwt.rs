@@ -1,5 +1,7 @@
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
+use chrono::prelude::*;
+use chrono::Duration;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -9,13 +11,18 @@ pub struct Claims {
     pub email: String,
 }
 
-pub fn encode_token(id: i64, email: String, secret: &str) -> String {
-    let claims = Claims {
-        exp: 1628380800,
-        iat: 1596898542,
+pub fn get_claims(id: i64, email: String) -> Claims {
+    let current_time = Utc::now().timestamp();
+    let expire_time = (Utc::now() + Duration::days(365)).timestamp();
+    Claims {
+        exp: expire_time as usize,
+        iat: current_time as usize,
         sub: id,
         email: email,
-    };
+    }
+}
+
+pub fn encode_token(claims: Claims, secret: &str) -> String {
     encode(
         &Header::default(),
         &claims,
@@ -41,8 +48,13 @@ mod tests {
     #[test]
     fn encode_token_returns_token() {
         let secret = "e4d25204-ea68-4307-ae30-1ee4fb39bc9";
-        let token = encode_token(123, "test@example.com".to_owned(), secret);
-        println!("{}", token);
+        let claims = Claims {
+            exp: 1628380800,
+            iat: 1596898542,
+            sub: 123,
+            email: "test@example.com".to_owned(),
+        };
+        let token = encode_token(claims, &secret);
         assert_eq!(token, "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjgzODA4MDAsImlhdCI6MTU5Njg5ODU0Miwic3ViIjoxMjMsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSJ9.xraUIqYvz8mwvLIAmu19r_Xrhf2CvZ-LbfUvL7140D0".to_owned());
     }
 
@@ -50,7 +62,7 @@ mod tests {
     fn decode_token_returns_calims() {
         let secret = "e4d25204-ea68-4307-ae30-1ee4fb39bc9";
         let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjgzODA4MDAsImlhdCI6MTU5Njg5ODU0Miwic3ViIjoxMjMsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSJ9.xraUIqYvz8mwvLIAmu19r_Xrhf2CvZ-LbfUvL7140D0".to_owned();
-        let res = decode_token(token, secret).unwrap();
+        let res = decode_token(token, &secret).unwrap();
         assert_eq!(res.email, "test@example.com".to_owned());
         assert_eq!(res.sub, 123);
         assert_eq!(res.exp, 1628380800);
@@ -61,7 +73,7 @@ mod tests {
     fn decode_token_returns_none_when_secret_is_invalid() {
         let secret = "invalid_key";
         let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjgzODA4MDAsImlhdCI6MTU5Njg5ODU0Miwic3ViIjoxMjMsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSJ9.MeX-IGU5TDGxczLehMDbvRMxcf4UL4U6nnQ5NPPrcxA".to_owned();
-        let result = decode_token(token, secret);
+        let result = decode_token(token, &secret);
         assert_eq!(result.is_none(), true);
     }
 
@@ -69,7 +81,7 @@ mod tests {
     fn decode_token_returns_none_when_token_is_invalid() {
         let secret = "e4d25204-ea68-4307-ae30-1ee4fb39bc9";
         let token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjgzODA4MDAsImlhdCI6MTU5Njg5ODU0Miwic3ViIjoxMjMsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSJ9.GBUZXvp1ReH4YxFKang-v5_PejIFdwbMOEcRoBbYSPY".to_owned();
-        let result = decode_token(token, secret);
+        let result = decode_token(token, &secret);
         assert_eq!(result.is_none(), true);
     }
 }

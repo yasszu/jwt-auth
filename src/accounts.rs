@@ -5,7 +5,7 @@ use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 use validator::Validate;
 
-use crate::auth::*;
+use crate::hash::*;
 use crate::model::*;
 
 pub async fn signup(
@@ -47,17 +47,17 @@ pub async fn login(
         Some(row) => {
             let target: String = row.get("password");
             let hash = get_hash(password.as_str());
-            let valid = target == hash;
+            let success = target == hash;
             let token = "token".to_owned();
-            let error = if valid {
+            let error = if success {
                 "".to_owned()
             } else {
                 format!("{}", "Password is invalid")
             };
             ResultToken {
-                success: valid,
-                token: token,
-                error: error,
+                success,
+                token,
+                error,
             }
         }
         None => ResultToken {
