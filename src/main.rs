@@ -1,7 +1,10 @@
 #[macro_use]
 extern crate validator_derive;
 extern crate validator;
+extern crate dotenv;
 
+use dotenv::dotenv;
+use std::env;
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
@@ -19,6 +22,7 @@ async fn index() -> Result<HttpResponse, Error> {
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=debug");
     env_logger::init();
+    dotenv().ok();
 
     // r2d2 pool
     let manager = PostgresConnectionManager::new(

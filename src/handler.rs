@@ -1,3 +1,6 @@
+extern crate dotenv;
+
+use std::env;
 use actix_web::error;
 use actix_web::{web, Error, HttpResponse};
 use postgres::NoTls;
@@ -50,13 +53,7 @@ pub async fn signup(
     })
     .map_err(|_| HttpResponse::InternalServerError())?;
     Ok(HttpResponse::Ok().json(res))
-}
-
-fn jwt_sign(id: i32, email: String) -> String {
-    let secret = "e4d25204-ea68-4307-ae30-1ee4fb39bc9";
-    let claims = jwt::get_claims(id, email);
-    jwt::encode_token(claims, &secret)
-}
+}                           
 
 pub async fn login(
     form: web::Json<FormLogin>,
@@ -100,4 +97,10 @@ pub async fn login(
     })
     .map_err(|_| HttpResponse::InternalServerError())?;
     Ok(HttpResponse::Ok().json(res))
+}
+
+fn jwt_sign(id: i32, email: String) -> String {
+    let secret = env::var("SECRET").unwrap();
+    let claims = jwt::get_claims(id, email);
+    jwt::encode_token(claims, &secret)
 }
