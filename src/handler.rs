@@ -1,11 +1,13 @@
 extern crate dotenv;
 
-use std::env;
 use actix_web::error;
-use actix_web::{web, Error, HttpResponse};
+use actix_web::error::ErrorUnauthorized;
+use actix_web::{web, Error, HttpRequest, HttpResponse};
+use jwt::Claims;
 use postgres::NoTls;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
+use std::env;
 use validator::Validate;
 
 use crate::hash::*;
@@ -53,7 +55,7 @@ pub async fn signup(
     })
     .map_err(|_| HttpResponse::InternalServerError())?;
     Ok(HttpResponse::Ok().json(res))
-}                           
+}
 
 pub async fn login(
     form: web::Json<FormLogin>,
@@ -99,8 +101,31 @@ pub async fn login(
     Ok(HttpResponse::Ok().json(res))
 }
 
+pub async fn verify(req: HttpRequest) -> Result<HttpResponse, Error> {
+    let res = match req.headers().get("Authorization") {
+        Some(auth) => {
+            let _token: Vec<&str> = auth.to_str().unwrap().split("Bearer").collect();
+            let token = _token[1].trim();
+            match jwt_verify(token) {
+                Some(claims) => ResponseAccount {
+                    id: claims.sub,
+                    email: claims.email,
+                },
+                None => return Err(ErrorUnauthorized("invalid token!")),
+            }
+        }
+        None => return Err(ErrorUnauthorized("invalid token!")),
+    };
+    Ok(HttpResponse::Ok().json(res))
+}
+
 fn jwt_sign(id: i32, email: String) -> String {
     let secret = env::var("SECRET").unwrap();
     let claims = jwt::get_claims(id, email);
     jwt::encode_token(claims, &secret)
+}
+
+fn jwt_verify(token: &str) -> Option<Claims> {
+    let secret = env::var("SECRET").unwrap();
+    jwt::decode_token(token.to_owned(), &secret)
 }

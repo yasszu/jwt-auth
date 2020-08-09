@@ -14,3 +14,9 @@ pub struct ResultToken {
     pub token: String,
     pub error: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ResponseAccount {
+    pub id: i32,   // Optional. Subject (whom token refers to)
+    pub email: String,
+}

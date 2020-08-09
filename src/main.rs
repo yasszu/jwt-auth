@@ -4,7 +4,6 @@ extern crate validator;
 extern crate dotenv;
 
 use dotenv::dotenv;
-use std::env;
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
@@ -40,6 +39,7 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             .route("/signup", web::post().to(handler::signup))
             .route("/login", web::post().to(handler::login))
+            .route("/verify", web::post().to(handler::verify))
     })
     .bind("127.0.0.1:8088")?
     .run()
