@@ -23,7 +23,7 @@ pub fn create_account(
         &[email, &hash],
     )?;
     conn.query_opt(
-        "SELECT id, email, password FROM accounts WHERE email = $1",
+        "SELECT account_id, email, password FROM accounts WHERE email = $1",
         &[email],
     )
 }
@@ -31,7 +31,7 @@ pub fn create_account(
 pub fn find_account(email: &String, db: web::Data<ConnectionPool>) -> Result<Option<Row>, Error> {
     let mut conn = db.get().unwrap();
     conn.query_opt(
-        "SELECT id, email, password FROM accounts WHERE email = $1",
+        "SELECT account_id, email, password FROM accounts WHERE email = $1",
         &[&email],
     )
 }

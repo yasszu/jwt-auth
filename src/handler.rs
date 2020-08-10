@@ -26,9 +26,9 @@ pub async fn signup(
         .await
         .map(|row| match row {
             Some(row) => {
-                let id: i32 = row.get("id");
+                let account_id: i32 = row.get("account_id");
                 let email: String = row.get("email");
-                let token = jwt_sign(id, email);
+                let token = jwt_sign(account_id, email);
                 ResultToken {
                     success: true,
                     token: token,
@@ -56,21 +56,22 @@ pub async fn login(
         .await
         .map(|row| match row {
             Some(row) => {
-                let _id: i32 = row.get("id");
+                let _account_id: i32 = row.get("account_id");
                 let _email: String = row.get("email");
                 let _password: String = row.get("password");
                 let hash = get_hash(password.as_str());
-                let success = _password == hash;
-                let token = jwt_sign(_id, _email);
-                let error = if success {
-                    "".to_owned()
+                if _password == hash {
+                    ResultToken {
+                        success: true,
+                        token: jwt_sign(_account_id, _email),
+                        error: "".to_owned(),
+                    }
                 } else {
-                    format!("{}", "Password is invalid")
-                };
-                ResultToken {
-                    success,
-                    token,
-                    error,
+                    ResultToken {
+                        success: false,
+                        token: "".to_owned(),
+                        error: format!("{}", "Password is invalid"),
+                    }
                 }
             }
             None => ResultToken {
@@ -90,7 +91,7 @@ pub async fn verify(req: HttpRequest) -> Result<HttpResponse, Error> {
             let token = _token[1].trim();
             match jwt_verify(token) {
                 Some(claims) => ResponseAccount {
-                    id: claims.sub,
+                    account_id: claims.sub,
                     email: claims.email,
                 },
                 None => return Err(ErrorUnauthorized("invalid token!")),

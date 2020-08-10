@@ -1,18 +1,19 @@
 #[macro_use]
 extern crate validator_derive;
-extern crate validator;
 extern crate dotenv;
+extern crate validator;
 
-use dotenv::dotenv;
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
+use dotenv::dotenv;
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
+use std::env;
 
+mod accounts;
 mod handler;
 mod hash;
-mod model;
 mod jwt;
-mod accounts;
+mod model;
 
 async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("OK"))
@@ -25,13 +26,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     // r2d2 pool
-    let manager = PostgresConnectionManager::new(
-        "host=localhost user=postgres password=root"
-            .parse()
-            .unwrap(),
-        NoTls,
-    );
-    let pool = r2d2::Pool::new(manager).expect("Faild to build postgres connection.");
+    let pool = r2d2::Pool::new(get_postgre_manager()).expect("Faild to build postgres connection.");
 
     HttpServer::new(move || {
         App::new()
@@ -45,4 +40,12 @@ async fn main() -> std::io::Result<()> {
     .bind("127.0.0.1:8088")?
     .run()
     .await
+}
+
+fn get_postgre_manager() -> PostgresConnectionManager<NoTls> {
+    let host = env::var("POSTGRES_HOST").unwrap();
+    let user = env::var("POSTGRES_USER").unwrap();
+    let password = env::var("POSTGRES_PASSWORD").unwrap();
+    let config = format!("host={} user={} password={}", host, user, password);
+    PostgresConnectionManager::new(config.parse().unwrap(), NoTls)
 }
