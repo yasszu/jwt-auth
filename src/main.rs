@@ -4,6 +4,7 @@ extern crate dotenv;
 extern crate validator;
 
 use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_identity::{Identity, CookieIdentityPolicy, IdentityService};
 use dotenv::dotenv;
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
@@ -15,8 +16,13 @@ mod hash;
 mod jwt;
 mod model;
 
-async fn index() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("OK"))
+async fn index(id: Identity) -> Result<HttpResponse, Error> {
+        if let Some(id) = id.identity() {
+            println!("jwt: {}", id);
+            Ok(HttpResponse::Ok().body("Authorized"))
+        } else {
+            Ok(HttpResponse::Ok().body("Not authorized"))
+        }
 }
 
 #[actix_rt::main]
@@ -32,6 +38,12 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .data(pool.clone())
             .wrap(middleware::Logger::default())
+            .wrap(IdentityService::new(
+                CookieIdentityPolicy::new(&[0; 32])
+                      .name("token")
+                      .path("/")
+                      .max_age_time(chrono::Duration::days(365))
+                      .secure(false)))
             .route("/", web::get().to(index))
             .route("/signup", web::post().to(handler::signup))
             .route("/login", web::post().to(handler::login))

@@ -3,6 +3,7 @@ extern crate dotenv;
 use actix_web::error;
 use actix_web::error::ErrorUnauthorized;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_identity::Identity;
 use postgres::NoTls;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
@@ -14,6 +15,7 @@ use crate::jwt::*;
 use crate::model::*;
 
 pub async fn signup(
+    id: Identity,
     form: web::Json<FormLogin>,
     db: web::Data<Pool<PostgresConnectionManager<NoTls>>>,
 ) -> Result<HttpResponse, Error> {
@@ -29,6 +31,7 @@ pub async fn signup(
                 let account_id: i32 = row.get("account_id");
                 let email: String = row.get("email");
                 let token = jwt_sign(account_id, email);
+                id.remember(token.clone()); 
                 ResultToken {
                     success: true,
                     token: token,
@@ -46,6 +49,7 @@ pub async fn signup(
 }
 
 pub async fn login(
+    id: Identity,
     form: web::Json<FormLogin>,
     db: web::Data<Pool<PostgresConnectionManager<NoTls>>>,
 ) -> Result<HttpResponse, Error> {
@@ -61,9 +65,11 @@ pub async fn login(
                 let _password: String = row.get("password");
                 let hash = get_hash(password.as_str());
                 if _password == hash {
+                    let token = jwt_sign(_account_id, _email); 
+                    id.remember(token.clone());
                     ResultToken {
                         success: true,
-                        token: jwt_sign(_account_id, _email),
+                        token: token,
                         error: "".to_owned(),
                     }
                 } else {

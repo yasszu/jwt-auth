@@ -73,11 +73,26 @@ dependencies = [
  "pin-project",
  "rand 0.7.3",
  "regex",
+ "ring",
  "serde 1.0.114",
  "serde_json",
  "serde_urlencoded",
  "sha1",
  "slab",
+ "time",
+]
+
+[[package]]
+name = "actix-identity"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a379b0639c293292d71defb8cc1f94c87b7705c904adf044338ad392df77c7a"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "futures",
+ "serde 1.0.114",
+ "serde_json",
  "time",
 ]
 
@@ -970,6 +985,7 @@ dependencies = [
 name = "jwt-auth"
 version = "0.1.0"
 dependencies = [
+ "actix-identity",
  "actix-rt",
  "actix-web",
  "chrono",
