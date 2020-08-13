@@ -3,7 +3,7 @@ extern crate validator_derive;
 extern crate dotenv;
 extern crate validator;
 
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use dotenv::dotenv;
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
@@ -11,13 +11,9 @@ use std::env;
 
 mod accounts;
 mod handler;
-mod hash;
+mod auth;
 mod jwt;
 mod model;
-
-async fn index() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("OK"))
-}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -32,7 +28,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .data(pool.clone())
             .wrap(middleware::Logger::default())
-            .route("/", web::get().to(index))
+            .route("/", web::get().to(handler::index))
             .route("/signup", web::post().to(handler::signup))
             .route("/login", web::post().to(handler::login))
             .route("/verify", web::post().to(handler::verify))

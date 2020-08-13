@@ -7,7 +7,7 @@ use postgres::NoTls;
 use r2d2::Pool;
 use r2d2_postgres::PostgresConnectionManager;
 
-use crate::hash::*;
+use crate::auth::*;
 
 type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 
