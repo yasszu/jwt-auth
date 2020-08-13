@@ -28,6 +28,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .data(pool.clone())
             .wrap(middleware::Logger::default())
+            .wrap(middleware::DefaultHeaders::new().header("Access-Control-Allow-Origin", "*"))
             .route("/", web::get().to(handler::index))
             .route("/signup", web::post().to(handler::signup))
             .route("/login", web::post().to(handler::login))
