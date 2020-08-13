@@ -3,8 +3,8 @@ extern crate validator_derive;
 extern crate dotenv;
 extern crate validator;
 
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
-use actix_identity::{Identity, CookieIdentityPolicy, IdentityService};
+use actix_web::{middleware, web, App, HttpServer};
+use actix_identity::{CookieIdentityPolicy, IdentityService};
 use dotenv::dotenv;
 use postgres::NoTls;
 use r2d2_postgres::PostgresConnectionManager;
@@ -15,15 +15,6 @@ mod handler;
 mod hash;
 mod jwt;
 mod model;
-
-async fn index(id: Identity) -> Result<HttpResponse, Error> {
-        if let Some(id) = id.identity() {
-            println!("jwt: {}", id);
-            Ok(HttpResponse::Ok().body("Authorized"))
-        } else {
-            Ok(HttpResponse::Ok().body("Not authorized"))
-        }
-}
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
@@ -42,9 +33,9 @@ async fn main() -> std::io::Result<()> {
                 CookieIdentityPolicy::new(&[0; 32])
                       .name("token")
                       .path("/")
-                      .max_age_time(chrono::Duration::days(365))
+                      .max_age_time(chrono::Duration::days(360))
                       .secure(false)))
-            .route("/", web::get().to(index))
+            .route("/", web::get().to(handler::index))
             .route("/signup", web::post().to(handler::signup))
             .route("/login", web::post().to(handler::login))
             .route("/verify", web::post().to(handler::verify))
